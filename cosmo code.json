@@ -1,0 +1,59 @@
+ public class RepositoryFixture
+    {
+        public readonly TransactionRepository TransactionRepository;
+        public RepositoryFixture()
+        {
+            var cosmosClient = new CosmosClient(ConfigurationHelper.FincrimePaymentScreeningCosmosConnectionString,
+                new CosmosClientOptions
+                {
+                    ConnectionMode = ConnectionMode.Gateway,
+                    AllowBulkExecution = true,
+                    SerializerOptions = new CosmosSerializationOptions()
+                    {
+                        PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+                    },
+                    MaxRetryAttemptsOnRateLimitedRequests = 3
+                });
+            var cosmosTransactionOptions = new TransactionDbContainerConfiguration
+            {
+                ContainerId = ConfigurationHelper.TransactionsContainerId,
+                DatabaseId = ConfigurationHelper.TransactionsDatabaseId
+            };
+
+            TransactionRepository = new TransactionRepository(cosmosClient, cosmosTransactionOptions);
+        }
+    }
+
+ public class IntegrationTestTransactionRepository : TransactionRepository
+    {
+        public IntegrationTestTransactionRepository(CosmosClient client,
+            TransactionDbContainerConfiguration containerConfiguration) : base(client, containerConfiguration)
+        {
+        }
+
+        public async Task<bool> HasAny()
+        {
+            var entityList = new List<TransactionEntity>();
+
+            using var setIterator = Container.GetItemLinqQueryable<TransactionEntity>()
+                .Where(x => true)
+                .ToFeedIterator<TransactionEntity>();
+            
+            while (setIterator.HasMoreResults)
+            {
+                entityList.AddRange(await setIterator.ReadNextAsync());
+
+                if (entityList.Count > 0)
+                {
+                    return true;
+                }
+            }
+            ;
+            return false;
+        }
+        public async Task Delete(string id)
+        {
+            await Container.DeleteItemAsync<TransactionEntity>(id, new PartitionKey(id));
+        }
+    }
+}

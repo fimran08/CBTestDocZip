@@ -1,0 +1,5 @@
+[Testing]-
+ Do we know how will we test the ticket? - 
+Do we have all the data to test the ticket?- 
+Who and What do we need to test (Unit / Component / Integration/ E2E) in this ticket?- 
+Non Functional Requirements identified?

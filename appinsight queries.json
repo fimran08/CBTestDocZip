@@ -1,0 +1,107 @@
+let target_duration = 4000;
+let target_percentage = 99;
+let queueData = app("cbuk-core-staginggreen-paymentscreening-uksouth").dependencies
+    | where target == "sb://blue-service-bus-ukwest.servicebus.windows.net/ | fincrime.paymentscreening.screeningbacklog";
+queueData
+| where name == "Send"
+| where operation_Name has "POST Screening/Post"
+|extend initialTimeStamp = timestamp  
+|join kind=inner (
+queueData
+    | where name == "Complete"
+    |summarize responseProcessedtime=max(timestamp) by operation_Id
+  )   on $left.operation_Id == $right.operation_Id
+ | extend  overallDuration_ms =datetime_diff('Millisecond', responseProcessedtime , initialTimeStamp)
+| summarize         
+    min = min(overallDuration_ms),
+    50th = percentile(overallDuration_ms, 50),
+    90th = percentile(overallDuration_ms, 90),
+    95th = percentile(overallDuration_ms, 95),
+    99th = percentile(overallDuration_ms, 99),
+    99_9th = percentile(overallDuration_ms, 99.9),
+    99_99th = percentile(overallDuration_ms, 99.99),
+    max = max(overallDuration_ms),
+    total = sum(itemCount),
+    within_slo_percentage = 100.0*countif(overallDuration_ms < target_duration)/count()
+| project
+    min, 50th, 90th, 95th, 99th, 99_9th, 99_99th, max, total,
+    within_slo_percentage,
+    within_slo_percentage_target = target_percentage,
+    min_target = -1,
+    50th_target = -1,
+    90th_target = -1,
+    95th_target = -1,
+    99th_target = -1,
+    99_9th_target = -1,
+    99_99th_target = -1,
+    max_target = -1
+	
+	let target_duration = 4000;
+let target_percentage = 99;
+let requestData = app("cbuk-core-staginggreen-paymentscreening-uksouth").requests;
+let responseData = app("cbuk-core-staginggreen-paymentscreening-uksouth").dependencies
+    | where target == "sb://blue-service-bus-ukwest.servicebus.windows.net/ | fincrime.paymentscreening.screeningbacklog";
+requestData
+| where operation_Name == "POST Screening/Post [version]"
+| where resultCode == "202"
+| extend requestReceived =  timestamp 
+|join(
+    responseData
+    | where name == "Complete"
+    |summarize responseProcessedtime=max(timestamp) by operation_Id
+) on $left.operation_Id == $right.operation_Id
+| extend overallDuration_ms =datetime_diff('Millisecond', responseProcessedtime , requestReceived)
+| summarize         
+    min = min(overallDuration_ms),
+    50th = percentile(overallDuration_ms, 50),
+    90th = percentile(overallDuration_ms, 90),
+    95th = percentile(overallDuration_ms, 95),
+    99th = percentile(overallDuration_ms, 99),
+    99_9th = percentile(overallDuration_ms, 99.9),
+    99_99th = percentile(overallDuration_ms, 99.99),
+    max = max(overallDuration_ms),
+    total = sum(itemCount),
+    within_slo_percentage = 100.0*countif(overallDuration_ms < target_duration)/count()
+| project
+    min, 50th, 90th, 95th, 99th, 99_9th, 99_99th, max, total,
+    within_slo_percentage,
+    within_slo_percentage_target = target_percentage,
+    min_target = -1,
+    50th_target = -1,
+    90th_target = -1,
+    95th_target = -1,
+    99th_target = -1,
+    99_9th_target = -1,
+    99_99th_target = -1,
+    max_target = -1
+	
+	let target_duration = 4000;
+let target_percentage = 99;
+let requestData = app("cbuk-core-staginggreen-paymentscreening-uksouth").requests;
+requestData
+| where operation_Name has "POST Screening/Post"
+| where resultCode == "202"
+| extend overallDuration_ms =  duration 
+| summarize         
+    min = min(overallDuration_ms),
+    50th = percentile(overallDuration_ms, 50),
+    90th = percentile(overallDuration_ms, 90),
+    95th = percentile(overallDuration_ms, 95),
+    99th = percentile(overallDuration_ms, 99),
+    99_9th = percentile(overallDuration_ms, 99.9),
+    99_99th = percentile(overallDuration_ms, 99.99),
+    max = max(overallDuration_ms),
+    total = sum(itemCount),
+    within_slo_percentage = 100.0*countif(overallDuration_ms < target_duration)/count()
+| project
+    min, 50th, 90th, 95th, 99th, 99_9th, 99_99th, max, total,
+    within_slo_percentage,
+    within_slo_percentage_target = target_percentage,
+    min_target = -1,
+    50th_target = -1,
+    90th_target = -1,
+    95th_target = -1,
+    99th_target = -1,
+    99_9th_target = -1,
+    99_99th_target = -1,
+    max_target = -1
